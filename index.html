@@ -423,17 +423,46 @@
         document.getElementById('list-container').innerHTML = html;
     }
 
-    function loadExtremeList() {
-        document.getElementById('list-title').innerText = "AREDL Top 10 (Offline List)";
+    async function loadExtremeList() {
+    const container = document.getElementById('list-container');
+    document.getElementById('list-title').innerText = "AREDL (LIVE)";
+
+    container.innerHTML = `<div class="demon-item">불러오는 중...</div>`;
+
+    try {
+        const res = await fetch("http://localhost:3000/api/aredl");
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div class="demon-item">데이터 없음</div>`;
+            return;
+        }
+
         let html = '';
-        AREDL_OFFLINE.forEach(level => {
-            html += `<div class="demon-item" onclick="window.open('https://youtube.com/results?search_query=GD+${level.name}','_blank')">
-                <span class="rank" style="color:var(--accent-pink)">${level.rank}</span>
-                <div class="level-info"><span class="name">${level.name}</span><span class="author">by ${level.publisher}</span></div>
-            </div>`;
+
+        data.slice(0, 100).forEach(level => {
+            html += `
+                <div class="demon-item"
+                    onclick="window.open('https://gdbrowser.com/search/${encodeURIComponent(level.name)}', '_blank')">
+                    
+                    <span class="rank" style="color: var(--accent-pink)">
+                        ${level.rank}
+                    </span>
+
+                    <div class="level-info">
+                        <span class="name">${level.name}</span>
+                    </div>
+                </div>
+            `;
         });
-        document.getElementById('list-container').innerHTML = html;
-    }
+
+        container.innerHTML = html;
+
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = `<div class="demon-item">불러오기 실패 (서버 확인)</div>`;
+      }
+    }  
 
     // ── 제출 ──
     async function submitRecord() {
@@ -463,7 +492,6 @@
             document.getElementById('levelName').value = '';
             document.getElementById('percent').value = '';
             document.getElementById('videoLink').value = '';
-            document.getElementById('status').value = 'pending';
         } catch (e) {
             console.error(e);
             showToast('❌ 제출 실패. 콘솔을 확인하세요.');
