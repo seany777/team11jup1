@@ -426,43 +426,47 @@
     async function loadExtremeList() {
     const container = document.getElementById('list-container');
     document.getElementById('list-title').innerText = "AREDL (LIVE)";
-
     container.innerHTML = `<div class="demon-item">불러오는 중...</div>`;
 
     try {
-        const res = await fetch("http://localhost:3000/api/aredl");
+        const res = await fetch("https://api.aredl.net/api/aredl/levels?page=1&pageSize=100");
         const data = await res.json();
 
-        if (!data || data.length === 0) {
+        const levels = data.data ?? data;
+        if (!levels || levels.length === 0) {
             container.innerHTML = `<div class="demon-item">데이터 없음</div>`;
             return;
         }
 
         let html = '';
-
-        data.slice(0, 100).forEach(level => {
+        levels.forEach(level => {
             html += `
                 <div class="demon-item"
                     onclick="window.open('https://gdbrowser.com/search/${encodeURIComponent(level.name)}', '_blank')">
-                    
-                    <span class="rank" style="color: var(--accent-pink)">
-                        ${level.rank}
-                    </span>
-
+                    <span class="rank" style="color:var(--accent-pink)">#${level.position}</span>
                     <div class="level-info">
                         <span class="name">${level.name}</span>
+                        <span class="author">by ${level.publisher?.name ?? '?'}</span>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
-
         container.innerHTML = html;
 
     } catch (e) {
         console.error(e);
-        container.innerHTML = `<div class="demon-item">불러오기 실패 (서버 확인)</div>`;
-      }
-    }  
+        // API 실패 시 오프라인 데이터로 폴백
+        let html = '';
+
+        //AREDL_OFFLINE.forEach(level => {
+        //    html += `<div class="demon-item">
+        //        <span class="rank" style="color:var(--accent-pink)">${level.rank}</span>
+        //        <div class="level-info"><span class="name">${level.name}</span><span class="author">by ${level.publisher}</span></div>
+        //    </div>`;
+        //});
+        container.innerHTML = html;
+        showToast('⚠️ 인터넷에 연결해주세요');
+    }
+}
 
     // ── 제출 ──
     async function submitRecord() {
