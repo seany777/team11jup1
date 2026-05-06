@@ -314,6 +314,11 @@
     }
 
     function onLoginSuccess(profile) {
+        if (!profile.email.endsWith('@dimigo.hs.kr')) {
+        showToast('❌ 디미고 이메일(@dimigo.hs.kr)만 로그인 가능합니다!');
+        if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
+        return;  // 여기서 차단
+        }
         currentUser = profile;
         isAdmin = ADMIN_EMAILS.includes(profile.email);
 
