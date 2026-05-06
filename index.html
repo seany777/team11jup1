@@ -441,7 +441,7 @@
         const name = document.getElementById('levelName').value;
         const percent = document.getElementById('percent').value;
         const video = document.getElementById('videoLink').value;
-        const status = document.getElementById('status').value;
+        const status = "pending";
         if (!name) { showToast('레벨 이름을 입력해주세요!'); return; }
         try {
             const { collection, addDoc, serverTimestamp } = window.firestoreLib;
