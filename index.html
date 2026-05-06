@@ -429,7 +429,7 @@
     container.innerHTML = `<div class="demon-item">불러오는 중...</div>`;
 
     try {
-        const res = await fetch("https://api.aredl.net/api/aredl/levels?page=1&pageSize=100");
+        const res = await fetch("https://corsproxy.io/?https://api.aredl.net/api/aredl/levels?page=1&pageSize=100");
         const data = await res.json();
 
         const levels = data.data ?? data;
