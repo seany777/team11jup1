@@ -429,7 +429,7 @@
     container.innerHTML = `<div class="demon-item">불러오는 중...</div>`;
 
     try {
-        const res = await fetch("/api/aredl");
+        const res = await fetch("/api/aredl.js");
         const data = await res.json();
 
         const levels = data.data ?? data;
