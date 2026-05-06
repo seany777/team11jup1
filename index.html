@@ -559,8 +559,14 @@
         container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
         try {
             const { collection, getDocs, query, orderBy } = window.firestoreLib;
-            const q = query(collection(window.db, 'records'), orderBy('createdAt','desc'));
+            const q = query(
+                        collection(window.db, 'records'),
+                        where('status','==','pending')
+                    );
             const snapshot = await getDocs(q);
+            const docs = [];
+                snapshot.forEach(doc => docs.push(doc));
+                docs.sort((a, b) => (a.data().createdAt?.seconds ?? 0) - (b.data().createdAt?.seconds ?? 0));
             if (snapshot.empty) { container.innerHTML = '<div style="padding:20px;color:#aaa">기록 없음</div>'; return; }
             const sStyle = {
                 accepted:{label:'✅ Accepted',color:'#4caf50'},
