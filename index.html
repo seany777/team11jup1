@@ -38,7 +38,6 @@
 
         .logo { font-weight: 900; letter-spacing: -1px; font-size: 1.4rem; color: var(--accent-pink); text-shadow: 0 0 10px rgba(237, 13, 146, 0.3); }
 
-        /* ── 로그인 전: 버튼 ── */
         .login-btn {
             background: var(--accent-pink);
             color: white;
@@ -52,9 +51,8 @@
         }
         .login-btn:hover { opacity: 0.8; }
 
-        /* ── 로그인 후: 프로필 영역 ── */
         .user-area {
-            display: none;          /* 로그인 전엔 숨김 */
+            display: none;
             align-items: center;
             gap: 10px;
         }
@@ -109,13 +107,18 @@
         .submit-form { background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-dim); }
-        input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: white; box-sizing: border-box; border-radius: 4px; }
-        input:focus { border-color: var(--accent-pink); outline: none; }
+        input, select {
+            width: 100%; padding: 12px;
+            background: #000; border: 1px solid var(--border);
+            color: white; box-sizing: border-box; border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        input:focus, select:focus { border-color: var(--accent-pink); outline: none; }
+        select option { background: #111; }
         .submit-btn { width: 100%; padding: 12px; background: var(--accent-pink); color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
 
         .tier-divider { padding: 12px 15px; background: #1a1a1a; font-weight: bold; border-bottom: 1px solid var(--border); }
 
-        /* ── 토스트 알림 ── */
         .toast {
             position: fixed; bottom: 30px; right: 30px;
             background: #1f1f1f; border: 1px solid var(--accent-pink);
@@ -127,20 +130,72 @@
             z-index: 999;
         }
         .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* ── 관리자 패널 ── */
+        .admin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .admin-card-header {
+            padding: 14px 18px;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .admin-card-body { padding: 16px 18px; }
+        .admin-card-body .info-row {
+            display: flex; gap: 8px; align-items: center;
+            font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;
+        }
+        .admin-card-body .info-row strong { color: var(--text-main); }
+
+        .status-badge {
+            font-size: 0.72rem; font-weight: 700;
+            padding: 3px 10px; border-radius: 20px;
+            border: 1px solid;
+        }
+        .status-pending  { color: #ffa726; border-color: #ffa726; }
+        .status-accepted { color: #4caf50; border-color: #4caf50; }
+        .status-rejected { color: #f44336; border-color: #f44336; }
+
+        /* Accept 확장 폼 */
+        .accept-form {
+            display: none;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .accept-form.open { display: block; }
+        .accept-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .accept-form .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .accept-form label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display: block; }
+        .accept-form input,
+        .accept-form select { padding: 9px 10px; font-size: 0.85rem; }
+
+        .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .btn-accept { background: #1a3d1a; color: #4caf50; border: 1px solid #4caf50; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 0.82rem; font-weight: 700; transition: all 0.2s; }
+        .btn-accept:hover { background: #4caf50; color: #000; }
+        .btn-reject { background: #3d1a1a; color: #f44336; border: 1px solid #f44336; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 0.82rem; font-weight: 700; transition: all 0.2s; }
+        .btn-reject:hover { background: #f44336; color: #fff; }
+        .btn-open-accept { background: transparent; color: #4caf50; border: 1px dashed #4caf50; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+        .btn-open-accept:hover { background: #1a3d1a; }
+
+        /* 관리자 전용 사이드바 버튼 */
+        #adminNavBtn { display: none; }
     </style>
 </head>
 <body onload="loadAboutGD()">
 
-<!-- ★ 새 Google Identity Services 라이브러리 -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <header>
     <div class="logo">DIMIGO GD LIST</div>
-
-    <!-- 로그인 전 -->
     <button class="login-btn" id="loginBtn" onclick="startGoogleLogin()">Google 로그인</button>
-
-    <!-- 로그인 후 -->
     <div class="user-area" id="userArea">
         <img id="userPhoto" src="" alt="프로필">
         <span class="user-name" id="userName"></span>
@@ -151,19 +206,26 @@
 <div class="container">
     <section class="hero">
         <h1>DIMIGO GD FORUM</h1>
-        <p>디미고 지메 고수들을 위한 리스트. (Offline 고정 데이터 연동 중)</p>
+        <p>디미고 지메 고수들을 위한 리스트.</p>
     </section>
 
     <div class="main-layout">
         <aside>
             <div class="list-box">
-                <div class="demon-item" style="color: #fff; font-weight: bold;" onclick="loadAboutGD()">📌 About GD</div>
+                <div class="demon-item" style="color:#fff;font-weight:bold;" onclick="loadAboutGD()">📌 About GD</div>
             </div>
             <br>
             <div class="list-box">
                 <div class="list-header">NAVIGATION</div>
-                <div class="demon-item" style="color: #5ec6ff;" onclick="loadGDDPList()">💠 GDDP (Easy~Insane)</div>
-                <div class="demon-item" style="color: #ff4d4d;" onclick="loadExtremeList()">🔥 Extreme (AREDL)</div>
+                <div class="demon-item" style="color:#5ec6ff;" onclick="loadGDDPList()">💠 GDDP (Easy~Insane)</div>
+                <div class="demon-item" style="color:#ff4d4d;" onclick="loadExtremeList()">🔥 Extreme (AREDL)</div>
+            </div>
+            <br>
+            <div class="list-box">
+                <div class="demon-item" onclick="loadMyRecords()">👤 내 기록 보기</div>
+                <div class="demon-item" onclick="loadAllRecords()">📋 전체 기록 보기</div>
+                <!-- 관리자만 보임 -->
+                <div class="demon-item" id="adminNavBtn" style="color:#ffd700;" onclick="loadAdminPanel()">🛡️ 관리자 패널</div>
             </div>
             <br>
             <div class="list-box">
@@ -180,7 +242,7 @@
 
         <aside>
             <div class="submit-form">
-                <div style="font-weight: bold; margin-bottom: 20px; color: var(--accent-pink);">RECORD SUBMIT</div>
+                <div style="font-weight:bold;margin-bottom:20px;color:var(--accent-pink);">RECORD SUBMIT</div>
                 <div class="form-group">
                     <label>Level Name</label>
                     <input type="text" id="levelName" placeholder="예: Bloodbath">
@@ -199,40 +261,29 @@
     </div>
 </div>
 
-<!-- 토스트 메시지 -->
 <div class="toast" id="toast"></div>
 
 <script>
-    // =========================================================
-    // ★★★ 여기에 본인의 Google Cloud Console 클라이언트 ID 입력 ★★★
-    // https://console.cloud.google.com → API 및 서비스 → 사용자 인증 정보
-    // =========================================================
+    // ★ 관리자 이메일 목록
+    const ADMIN_EMAILS = [
+        'your_admin@gmail.com'  // ← 여기에 관리자 이메일 입력
+    ];
+
     const GOOGLE_CLIENT_ID = '305327483972-ehu6ico6qnb99ct58vjqrjjrfn2e7csm.apps.googleusercontent.com';
 
     let googleClient = null;
     let currentUser = null;
+    let isAdmin = false;
 
-    // Google GSI 라이브러리 로드 완료 후 초기화
-    window.addEventListener('load', () => {
-        // 라이브러리가 비동기 로드되므로 약간 대기
-        setTimeout(initGoogleLogin, 500);
-    });
+    window.addEventListener('load', () => { setTimeout(initGoogleLogin, 500); });
 
     function initGoogleLogin() {
-        if (typeof google === 'undefined') {
-            console.warn('Google GSI 라이브러리 미로드. 재시도 중...');
-            setTimeout(initGoogleLogin, 500);
-            return;
-        }
-
-        // OAuth2 팝업 클라이언트 초기화
+        if (typeof google === 'undefined') { setTimeout(initGoogleLogin, 500); return; }
         googleClient = google.accounts.oauth2.initTokenClient({
             client_id: GOOGLE_CLIENT_ID,
             scope: 'openid email profile',
             callback: handleTokenResponse,
         });
-
-        // One Tap (자동 로그인 시도) - 선택사항
         google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleIdToken,
@@ -240,74 +291,56 @@
         });
     }
 
-    // ── 버튼 클릭 → 팝업 로그인 ──
     function startGoogleLogin() {
-        if (!googleClient) {
-            showToast('⚠️ Google 로그인 초기화 중입니다. 잠시 후 다시 시도하세요.');
-            return;
-        }
+        if (!googleClient) { showToast('⚠️ 잠시 후 다시 시도하세요.'); return; }
         googleClient.requestAccessToken();
     }
 
-    // ── Access Token 수신 후 사용자 정보 가져오기 ──
     async function handleTokenResponse(tokenResponse) {
-        if (tokenResponse.error) {
-            console.error('로그인 실패:', tokenResponse.error);
-            return;
-        }
-
+        if (tokenResponse.error) { console.error('로그인 실패:', tokenResponse.error); return; }
         try {
-            // Google People API로 프로필 정보 요청
-            const res = await fetch(
-                'https://www.googleapis.com/oauth2/v3/userinfo',
-                { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
-            );
+            const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+                { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } });
             const profile = await res.json();
-            onLoginSuccess(profile, tokenResponse.access_token);
+            onLoginSuccess(profile);
         } catch (e) {
-            console.error('프로필 요청 실패:', e);
             showToast('❌ 사용자 정보를 불러오지 못했습니다.');
         }
     }
 
-    // ── One Tap ID Token 방식 콜백 (credential = JWT) ──
     function handleIdToken(response) {
-        // JWT 디코딩 (서버 검증 없이 프론트에서 파싱 — 테스트 용도)
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
-        onLoginSuccess(payload, null);
+        onLoginSuccess(payload);
     }
 
-    // ── 로그인 성공 공통 처리 ──
-    function onLoginSuccess(profile, accessToken) {
+    function onLoginSuccess(profile) {
         currentUser = profile;
+        isAdmin = ADMIN_EMAILS.includes(profile.email);
 
-        // 헤더 UI 전환
         document.getElementById('loginBtn').style.display = 'none';
         const userArea = document.getElementById('userArea');
         userArea.style.display = 'flex';
         document.getElementById('userPhoto').src = profile.picture;
-        document.getElementById('userName').textContent = profile.name;
+        document.getElementById('userName').textContent = profile.name + (isAdmin ? ' 🛡️' : '');
 
-        showToast(`🎮 환영합니다, ${profile.name}님!`);
-        console.log('로그인 성공:', profile);
+        // 관리자 버튼 표시
+        document.getElementById('adminNavBtn').style.display = isAdmin ? 'flex' : 'none';
+
+        showToast(`🎮 환영합니다, ${profile.name}님!${isAdmin ? ' (관리자)' : ''}`);
     }
 
-    // ── 로그아웃 ──
     function signOut() {
-        if (typeof google !== 'undefined') {
-            google.accounts.id.disableAutoSelect();
-        }
+        if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
         currentUser = null;
-
+        isAdmin = false;
         document.getElementById('loginBtn').style.display = '';
         document.getElementById('userArea').style.display = 'none';
         document.getElementById('userPhoto').src = '';
         document.getElementById('userName').textContent = '';
-
+        document.getElementById('adminNavBtn').style.display = 'none';
         showToast('👋 로그아웃 되었습니다.');
     }
 
-    // ── 토스트 알림 ──
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -315,166 +348,384 @@
         setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    // =========================================================
-    //  기존 리스트/폼 로직 (변경 없음)
-    // =========================================================
+    // ── 데이터 ──
     const GDDP_OFFLINE = {
         "beginner": [
-            {name: "The Nightmare", author: "Jax", id: "13519"},
-            {name: "The Lightning Road", author: "Timeless", id: "55520"},
-            {name: "iSpyWithMyLittleEye", author: "Vion", id: "90158869"},
-            {name: "Platinum Adventure", author: "JerryFive", id: "590442"}
+            {name:"The Nightmare",author:"Jax",id:"13519"},
+            {name:"The Lightning Road",author:"Timeless",id:"55520"},
+            {name:"iSpyWithMyLittleEye",author:"Vion",id:"90158869"},
+            {name:"Platinum Adventure",author:"JerryFive",id:"590442"}
         ],
         "bronze": [
-            {name: "B", author: "Motleyorc", id: "34085027"},
-            {name: "DeCode", author: "Rekedge", id: "2915527"},
-            {name: "Death Moon", author: "FunnyGame", id: "8660411"}
+            {name:"B",author:"Motleyorc",id:"34085027"},
+            {name:"DeCode",author:"Rekedge",id:"2915527"},
+            {name:"Death Moon",author:"FunnyGame",id:"8660411"}
         ],
         "silver": [
-            {name: "Nine Circles", author: "Zobros", id: "4284013"},
-            {name: "Jawbreaker", author: "ZenthicAlpha", id: "4381328"},
-            {name: "Forsaken Neon", author: "Zobros", id: "4519782"}
+            {name:"Nine Circles",author:"Zobros",id:"4284013"},
+            {name:"Jawbreaker",author:"ZenthicAlpha",id:"4381328"},
+            {name:"Forsaken Neon",author:"Zobros",id:"4519782"}
         ],
         "gold": [
-            {name: "Future Funk", author: "JonathanGD", id: "46543165"},
-            {name: "Windy Landscape", author: "Woogi1411", id: "4684367"},
-            {name: "Supersonic", author: "ZenthicAlpha", id: "4681320"}
+            {name:"Future Funk",author:"JonathanGD",id:"46543165"},
+            {name:"Windy Landscape",author:"Woogi1411",id:"4684367"},
+            {name:"Supersonic",author:"ZenthicAlpha",id:"4681320"}
         ]
     };
 
     const AREDL_OFFLINE = [
-        {name: "Tidal Wave", publisher: "Onilink", rank: "#1"},
-        {name: "Avernus", publisher: "Pockabest", rank: "#2"},
-        {name: "Silent Clubstep", publisher: "Paqoe", rank: "#3"},
-        {name: "Acheron", publisher: "Ryamu", rank: "#4"},
-        {name: "Slaughterhouse", publisher: "Doggie", rank: "#5"},
-        {name: "Keres", publisher: "ItzVortox", rank: "#6"},
-        {name: "Abyss of Darkness", publisher: "Exen", rank: "#7"},
-        {name: "Sakupen Circles", publisher: "Nick24", rank: "#8"},
-        {name: "Firework", publisher: "Trick", rank: "#9"},
-        {name: "Tartarus", publisher: "Riot", rank: "#10"}
+        {name:"Tidal Wave",publisher:"Onilink",rank:"#1"},
+        {name:"Avernus",publisher:"Pockabest",rank:"#2"},
+        {name:"Silent Clubstep",publisher:"Paqoe",rank:"#3"},
+        {name:"Acheron",publisher:"Ryamu",rank:"#4"},
+        {name:"Slaughterhouse",publisher:"Doggie",rank:"#5"},
+        {name:"Keres",publisher:"ItzVortox",rank:"#6"},
+        {name:"Abyss of Darkness",publisher:"Exen",rank:"#7"},
+        {name:"Sakupen Circles",publisher:"Nick24",rank:"#8"},
+        {name:"Firework",publisher:"Trick",rank:"#9"},
+        {name:"Tartarus",publisher:"Riot",rank:"#10"}
     ];
 
+    // ── 페이지 로드 함수 ──
     function loadAboutGD() {
-        const container = document.getElementById('list-container');
         document.getElementById('list-title').innerText = "About Geometry Dash";
-        container.innerHTML = `
+        document.getElementById('list-container').innerHTML = `
             <div class="about-section">
                 <img src="./gdbanner.png" alt="Geometry Dash Banner">
                 <h2>1. 개요</h2>
-                <p><strong>Geometry Dash</strong>는 RobTop이 제작한 리듬 플랫폼 게임입니다. 2013년 출시 이후 에디터 기능을 통해 무한한 커뮤니티 콘텐츠를 생성하고 있습니다.</p>
+                <p><strong>Geometry Dash</strong>는 RobTop이 제작한 리듬 플랫폼 게임입니다.</p>
                 <h2>2. 특징</h2>
                 <ul>
                     <li><strong>One-Button:</strong> 단순한 조작으로 극한의 피지컬을 요구합니다.</li>
                     <li><strong>커스텀 레벨:</strong> 전 세계 유저들이 만든 수천만 개의 맵이 존재합니다.</li>
                 </ul>
-                <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin-top: 30px; border: 1px solid var(--accent-pink);">
-                    <h3 style="margin: 0; color: var(--accent-pink);">⚠️ 디미고 수칙</h3>
-                    <p style="margin-top:10px; font-size: 0.9rem;">- 모든 기록은 유튜브 영상 증빙 필수.<br>- 핵 사용 적발 시 즉각 제명됩니다.</p>
+                <div style="background:#1a1a1a;padding:20px;border-radius:8px;margin-top:30px;border:1px solid var(--accent-pink);">
+                    <h3 style="margin:0;color:var(--accent-pink);">⚠️ 디미고 수칙</h3>
+                    <p style="margin-top:10px;font-size:0.9rem;">- 모든 기록은 유튜브 영상 증빙 필수.<br>- 핵 사용 적발 시 즉각 제명됩니다.</p>
                 </div>
             </div>`;
     }
 
     function loadGDDPList() {
-        const container = document.getElementById('list-container');
         document.getElementById('list-title').innerText = "GDDP (Offline List)";
         let html = '';
-        const tiers = ['beginner', 'bronze', 'silver', 'gold'];
+        const tiers = ['beginner','bronze','silver','gold'];
         tiers.forEach(tier => {
-            const colors = {'beginner': '#5ec6ff', 'bronze': '#cd7f32', 'silver': '#c0c0c0', 'gold': '#ffd700'};
-            html += `<div class="tier-divider" style="border-left: 5px solid ${colors[tier]}; color: ${colors[tier]}; font-size:0.8rem;">
-                        <span>${tier.toUpperCase()} TIER</span>
-                     </div>`;
+            const colors = {beginner:'#5ec6ff',bronze:'#cd7f32',silver:'#c0c0c0',gold:'#ffd700'};
+            html += `<div class="tier-divider" style="border-left:5px solid ${colors[tier]};color:${colors[tier]};font-size:0.8rem;">${tier.toUpperCase()} TIER</div>`;
             GDDP_OFFLINE[tier].forEach(level => {
-                html += `
-                    <div class="demon-item" onclick="window.open('https://youtube.com/results?search_query=GD+${level.name}', '_blank')">
-                        <span class="rank" style="color:#555">ID: ${level.id}</span>
-                        <div class="level-info">
-                            <span class="name">${level.name}</span>
-                            <span class="author">by ${level.author}</span>
-                        </div>
-                    </div>`;
+                html += `<div class="demon-item" onclick="window.open('https://youtube.com/results?search_query=GD+${level.name}','_blank')">
+                    <span class="rank" style="color:#555">ID: ${level.id}</span>
+                    <div class="level-info"><span class="name">${level.name}</span><span class="author">by ${level.author}</span></div>
+                </div>`;
             });
         });
-        container.innerHTML = html;
+        document.getElementById('list-container').innerHTML = html;
     }
 
     function loadExtremeList() {
-        const container = document.getElementById('list-container');
         document.getElementById('list-title').innerText = "AREDL Top 10 (Offline List)";
         let html = '';
         AREDL_OFFLINE.forEach(level => {
-            html += `
-                <div class="demon-item" onclick="window.open('https://youtube.com/results?search_query=GD+${level.name}', '_blank')">
-                    <span class="rank" style="color: var(--accent-pink)">${level.rank}</span>
-                    <div class="level-info">
-                        <span class="name">${level.name}</span>
-                        <span class="author">by ${level.publisher}</span>
+            html += `<div class="demon-item" onclick="window.open('https://youtube.com/results?search_query=GD+${level.name}','_blank')">
+                <span class="rank" style="color:var(--accent-pink)">${level.rank}</span>
+                <div class="level-info"><span class="name">${level.name}</span><span class="author">by ${level.publisher}</span></div>
+            </div>`;
+        });
+        document.getElementById('list-container').innerHTML = html;
+    }
+
+    // ── 제출 ──
+    async function submitRecord() {
+        if (!currentUser) { showToast('⚠️ 기록 제출은 로그인 후 가능합니다!'); return; }
+        const name = document.getElementById('levelName').value;
+        const percent = document.getElementById('percent').value;
+        const video = document.getElementById('videoLink').value;
+        const status = document.getElementById('status').value;
+        if (!name) { showToast('레벨 이름을 입력해주세요!'); return; }
+        try {
+            const { collection, addDoc, serverTimestamp } = window.firestoreLib;
+            await addDoc(collection(window.db, 'records'), {
+                levelName: name,
+                percent: Number(percent),
+                videoLink: video,
+                status: status,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                userPhoto: currentUser.picture,
+                createdAt: serverTimestamp(),
+                // 관리자가 나중에 채울 필드 (기본값)
+                demonTier: null,
+                rank: null,
+                difficultyScore: null
+            });
+            showToast(`✅ ${name} 기록이 제출되었습니다!`);
+            document.getElementById('levelName').value = '';
+            document.getElementById('percent').value = '';
+            document.getElementById('videoLink').value = '';
+            document.getElementById('status').value = 'pending';
+        } catch (e) {
+            console.error(e);
+            showToast('❌ 제출 실패. 콘솔을 확인하세요.');
+        }
+    }
+
+    // ── 내 기록 보기 ──
+    async function loadMyRecords() {
+        if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다!'); return; }
+        const container = document.getElementById('list-container');
+        document.getElementById('list-title').innerText = `👤 ${currentUser.name}의 기록`;
+        container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
+        try {
+            const { collection, getDocs, query, orderBy, where } = window.firestoreLib;
+            const q = query(
+                collection(window.db, 'records'),
+                where('userEmail','==', currentUser.email),
+                orderBy('createdAt','desc')
+            );
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) { container.innerHTML = '<div style="padding:20px;color:#aaa">제출한 기록이 없습니다.</div>'; return; }
+            const sStyle = {
+                accepted:{label:'✅ Accepted',color:'#4caf50'},
+                rejected:{label:'❌ Rejected',color:'#f44336'},
+                pending: {label:'⏳ Pending', color:'#ffa726'}
+            };
+            let html = '';
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const s = sStyle[d.status] || sStyle['pending'];
+                const tierLabels = {easy_demon:'이지 데몬',medium_demon:'미디엄 데몬',hard_demon:'하드 데몬',insane_demon:'인세인 데몬',extreme_demon:'익스트림 데몬'};
+                html += `<div class="demon-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
+                    <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                        <strong style="font-size:1rem;">${d.levelName}</strong>
+                        <span class="status-badge status-${d.status}">${s.label}</span>
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--accent-pink)">Progress: <strong>${d.percent}%</strong></div>
+                    ${d.status === 'accepted' ? `
+                    <div style="font-size:0.8rem;color:#aaa;display:flex;gap:12px;flex-wrap:wrap;">
+                        ${d.demonTier ? `<span>🏷️ ${tierLabels[d.demonTier] || d.demonTier}</span>` : ''}
+                        ${d.rank ? `<span>🏆 순위: #${d.rank}</span>` : ''}
+                        ${d.difficultyScore !== null && d.difficultyScore !== undefined ? `<span>📊 난이도: ${d.difficultyScore}</span>` : ''}
+                    </div>` : ''}
+                    <div style="font-size:0.8rem;color:#555;">
+                        ${d.videoLink ? `<a href="${d.videoLink}" target="_blank" style="color:#5ec6ff;">🎬 영상</a> ·` : ''}
+                        ${d.createdAt?.toDate().toLocaleDateString('ko-KR') ?? '날짜 미상'}
                     </div>
                 </div>`;
-        });
-        container.innerHTML = html;
-    }
-    //제출
-    async function submitRecord() {
-    if (!currentUser) {
-        showToast('⚠️ 기록 제출은 로그인 후 가능합니다!');
-        return;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<div style="padding:20px;color:red">불러오기 실패</div>';
+        }
     }
 
-    const name = document.getElementById('levelName').value;
-    const percent = document.getElementById('percent').value;
-    const video = document.getElementById('videoLink').value;
-    const status = document.getElementById('status').value;
-
-    if (!name) { showToast('레벨 이름을 입력해주세요!'); return; }
-
-    try {
-        const { collection, addDoc, serverTimestamp } = window.firestoreLib;
-
-        await addDoc(collection(window.db, 'records'), {
-            levelName: name,
-            percent: Number(percent),
-            videoLink: video,
-            status: status,                  // ← 추가
-            userName: currentUser.name,
-            userEmail: currentUser.email,
-            userPhoto: currentUser.picture,
-            createdAt: serverTimestamp()
-        });
-
-        showToast(`✅ ${name} 기록이 제출되었습니다!`);
-        document.getElementById('levelName').value = '';
-        document.getElementById('percent').value = '';
-        document.getElementById('videoLink').value = '';
-        document.getElementById('status').value = 'pending';
-
-    } catch (e) {
-        console.error(e);
-        showToast('❌ 제출 실패. 콘솔을 확인하세요.');
+    // ── 전체 기록 보기 ──
+    async function loadAllRecords() {
+        const container = document.getElementById('list-container');
+        document.getElementById('list-title').innerText = '📋 전체 기록';
+        container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
+        try {
+            const { collection, getDocs, query, orderBy } = window.firestoreLib;
+            const q = query(collection(window.db, 'records'), orderBy('createdAt','desc'));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) { container.innerHTML = '<div style="padding:20px;color:#aaa">기록 없음</div>'; return; }
+            const sStyle = {
+                accepted:{label:'✅ Accepted',color:'#4caf50'},
+                rejected:{label:'❌ Rejected',color:'#f44336'},
+                pending: {label:'⏳ Pending', color:'#ffa726'}
+            };
+            let html = '';
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const s = sStyle[d.status] || sStyle['pending'];
+                html += `<div class="demon-item" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                    <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <img src="${d.userPhoto}" style="width:22px;height:22px;border-radius:50%;">
+                            <strong>${d.levelName}</strong>
+                            <span style="color:var(--accent-pink)">${d.percent}%</span>
+                        </div>
+                        <span class="status-badge status-${d.status}">${s.label}</span>
+                    </div>
+                    <div style="font-size:0.78rem;color:#555">${d.userName} · ${d.createdAt?.toDate().toLocaleDateString('ko-KR') ?? ''}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<div style="padding:20px;color:red">불러오기 실패</div>';
+        }
     }
-}
+
+    // ── 관리자 패널 ──
+    async function loadAdminPanel() {
+        if (!isAdmin) { showToast('⚠️ 관리자만 접근 가능합니다.'); return; }
+        const container = document.getElementById('list-container');
+        document.getElementById('list-title').innerText = '🛡️ 관리자 패널 — Pending 기록';
+        container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
+
+        try {
+            const { collection, getDocs, query, where, orderBy } = window.firestoreLib;
+            const q = query(
+                collection(window.db, 'records'),
+                where('status','==','pending'),
+                orderBy('createdAt','asc')
+            );
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                container.innerHTML = '<div style="padding:24px;color:#aaa;text-align:center;">✅ 검토할 Pending 기록이 없습니다.</div>';
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const docId = doc.id;
+                const date = d.createdAt?.toDate().toLocaleDateString('ko-KR') ?? '날짜 미상';
+
+                html += `
+                <div class="admin-card" id="card-${docId}">
+                    <div class="admin-card-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <img src="${d.userPhoto}" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--accent-pink);">
+                            <strong style="font-size:1rem;">${d.levelName}</strong>
+                            <span style="color:var(--accent-pink);font-weight:700;">${d.percent}%</span>
+                        </div>
+                        <span class="status-badge status-pending">⏳ Pending</span>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="info-row">👤 <strong>${d.userName}</strong> <span style="color:#555">(${d.userEmail})</span></div>
+                        <div class="info-row">📅 제출일: <strong>${date}</strong></div>
+                        <div class="info-row">🎬 ${d.videoLink
+                            ? `<a href="${d.videoLink}" target="_blank" style="color:#5ec6ff;">영상 링크 보기</a>`
+                            : '<span style="color:#555">영상 없음</span>'}</div>
+
+                        <!-- Accept 폼 (토글) -->
+                        <div class="accept-form" id="accept-form-${docId}">
+                            <div style="font-size:0.8rem;color:var(--accent-pink);font-weight:700;margin-bottom:10px;">✅ 승인 정보 입력</div>
+                            <div class="row">
+                                <div>
+                                    <label>데몬 티어</label>
+                                    <select id="tier-${docId}">
+                                        <option value="easy_demon">😈 이지 데몬</option>
+                                        <option value="medium_demon">😈 미디엄 데몬</option>
+                                        <option value="hard_demon">😈 하드 데몬</option>
+                                        <option value="insane_demon">😈 인세인 데몬</option>
+                                        <option value="extreme_demon">💀 익스트림 데몬</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>순위 (숫자만)</label>
+                                    <input type="number" id="rank-${docId}" placeholder="예: 42" min="1">
+                                </div>
+                            </div>
+                            <div>
+                                <label>난이도 수치 (소수점 가능)</label>
+                                <input type="number" id="diff-${docId}" placeholder="예: 8.7" step="0.1" min="0" max="10">
+                            </div>
+                        </div>
+
+                        <!-- 버튼 -->
+                        <div class="btn-row">
+                            <button class="btn-open-accept" onclick="toggleAcceptForm('${docId}')">✅ 승인하기</button>
+                            <button class="btn-accept" id="confirm-accept-${docId}" style="display:none;" onclick="approveRecord('${docId}')">✔ 확정 승인</button>
+                            <button class="btn-reject" onclick="rejectRecord('${docId}')">❌ 거부하기</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = `<div style="padding:16px;">${html}</div>`;
+
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<div style="padding:20px;color:red">불러오기 실패. Firestore 인덱스 확인!</div>';
+        }
+    }
+
+    // 승인 폼 토글
+    function toggleAcceptForm(docId) {
+        const form = document.getElementById(`accept-form-${docId}`);
+        const confirmBtn = document.getElementById(`confirm-accept-${docId}`);
+        const isOpen = form.classList.toggle('open');
+        confirmBtn.style.display = isOpen ? 'inline-block' : 'none';
+    }
+
+    // 승인 처리
+    async function approveRecord(docId) {
+        const tier = document.getElementById(`tier-${docId}`).value;
+        const rank = document.getElementById(`rank-${docId}`).value;
+        const diff = document.getElementById(`diff-${docId}`).value;
+
+        if (!rank) { showToast('순위를 입력해주세요!'); return; }
+        if (diff === '') { showToast('난이도 수치를 입력해주세요!'); return; }
+
+        try {
+            const { doc, updateDoc } = window.firestoreLib;
+            await updateDoc(doc(window.db, 'records', docId), {
+                status: 'accepted',
+                demonTier: tier,
+                rank: Number(rank),
+                difficultyScore: Number(diff),
+                reviewedAt: new Date()
+            });
+            showToast('✅ 기록이 승인되었습니다!');
+            // 카드 제거
+            const card = document.getElementById(`card-${docId}`);
+            if (card) card.remove();
+        } catch (e) {
+            console.error(e);
+            showToast('❌ 승인 실패. 콘솔 확인!');
+        }
+    }
+
+    // 거부 처리
+    async function rejectRecord(docId) {
+        if (!confirm('이 기록을 거부하시겠습니까?')) return;
+        try {
+            const { doc, updateDoc } = window.firestoreLib;
+            await updateDoc(doc(window.db, 'records', docId), {
+                status: 'rejected',
+                reviewedAt: new Date()
+            });
+            showToast('❌ 기록이 거부되었습니다.');
+            const card = document.getElementById(`card-${docId}`);
+            if (card) card.remove();
+        } catch (e) {
+            console.error(e);
+            showToast('❌ 거부 처리 실패.');
+        }
+    }
 </script>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+    import {
+        getFirestore, collection, addDoc, getDocs,
+        query, orderBy, where, serverTimestamp,
+        doc, updateDoc
+    } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBu6-HlFlzwTyxMYr85TMH71VS70nfB7OQ",
-    authDomain: "dimigo-gd-forum.firebaseapp.com",
-    projectId: "dimigo-gd-forum",
-    storageBucket: "dimigo-gd-forum.firebasestorage.app",
-    messagingSenderId: "41583507504",
-    appId: "1:41583507504:web:af462f8cc4e0cb91afd5f5"
-  };
+    const firebaseConfig = {
+        apiKey: "AIzaSyBu6-HlFlzwTyxMYr85TMH71VS70nfB7OQ",
+        authDomain: "dimigo-gd-forum.firebaseapp.com",
+        projectId: "dimigo-gd-forum",
+        storageBucket: "dimigo-gd-forum.firebasestorage.app",
+        messagingSenderId: "41583507504",
+        appId: "1:41583507504:web:af462f8cc4e0cb91afd5f5"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  // ── 전역으로 노출 (기존 일반 script에서 사용하기 위해) ──
-  window.db = db;
-  window.firestoreLib = { collection, addDoc, getDocs, query, orderBy, serverTimestamp };
+    window.db = db;
+    window.firestoreLib = {
+        collection, addDoc, getDocs, query,
+        orderBy, where, serverTimestamp,
+        doc, updateDoc
+    };
 </script>
 </body>
 </html>
