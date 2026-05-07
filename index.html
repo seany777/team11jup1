@@ -224,6 +224,7 @@
             <div class="list-box">
                 <div class="demon-item" onclick="loadMyRecords()">👤 내 기록 보기</div>
                 <div class="demon-item" onclick="loadAllRecords()">📋 전체 기록 보기</div>
+                <div class="demon-item" onclick="loadMyPoints()">💰 내 포인트 보기</div>
                 <!-- 관리자만 보임 -->
                 <div class="demon-item" id="adminNavBtn" style="color:#ffd700;" onclick="loadAdminPanel()">🛡️ 관리자 패널</div>
             </div>
@@ -571,30 +572,30 @@
 // ── 전체 기록 보기 ──
 async function loadAllRecords() {
     const container = document.getElementById('list-container');
-    document.getElementById('list-title').innerText = '📋 전체 기록';
+    document.getElementById('list-title').innerText = '📋 전체 기록 (익스트림)';
     container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
     try {
         const { collection, getDocs, query, orderBy } = window.firestoreLib;
         const q = query(collection(window.db, 'records'), orderBy('createdAt','desc'));
         const snapshot = await getDocs(q);
 
-        const tierOrder = {extreme_demon:0, insane_demon:1, hard_demon:2, medium_demon:3, easy_demon:4};
         const docs = [];
         snapshot.forEach(doc => {
-            if (doc.data().status !== 'rejected') docs.push(doc);
+            const d = doc.data();
+            if (d.status === 'rejected') return;
+            if (d.demonTier !== 'extreme_demon' && d.demonTier !== 'Extreme demon') return;
+            docs.push(doc);
         });
         docs.sort((a, b) => {
             const da = a.data(), db = b.data();
-            const tierDiff = (tierOrder[da.demonTier] ?? 9) - (tierOrder[db.demonTier] ?? 9);
-            if (tierDiff !== 0) return tierDiff;
             return (db.difficultyScore ?? 0) - (da.difficultyScore ?? 0);
         });
 
         if (docs.length === 0) { container.innerHTML = '<div style="padding:20px;color:#aaa">기록 없음</div>'; return; }
 
         const sStyle = {
-            accepted:{label:'✅ Accepted',color:'#4caf50'},
-            pending: {label:'⏳ Pending', color:'#ffa726'}
+            accepted: {label:'✅ Accepted'},
+            pending:  {label:'⏳ Pending'}
         };
         let html = '';
         docs.forEach(doc => {
@@ -606,6 +607,7 @@ async function loadAllRecords() {
                 + '<img src="' + d.userPhoto + '" style="width:22px;height:22px;border-radius:50%;">'
                 + '<strong>' + d.levelName + '</strong>'
                 + '<span style="color:var(--accent-pink)">' + d.percent + '%</span>'
+                + (d.rank ? '<span style="color:#ffd700;font-size:0.8rem;">🏆 #' + d.rank + '</span>' : '')
                 + '</div>'
                 + '<span class="status-badge status-' + d.status + '">' + s.label + '</span>'
                 + '</div>'
@@ -646,10 +648,12 @@ async function loadAdminPanel() {
             const docId = doc.id;
             const date = d.createdAt?.toDate().toLocaleDateString('ko-KR') ?? '날짜 미상';
             const videoHtml = d.videoLink
-            const demontier = d.demontier
                 ? '<a href="' + d.videoLink + '" target="_blank" style="color:#5ec6ff;">영상 링크 보기</a>'
                 : '<span style="color:#555">영상 없음</span>';
-
+            const tierLabels = {easy_demon:'이지 데몬', medium_demon:'미디엄 데몬', hard_demon:'하드 데몬', insane_demon:'인세인 데몬', extreme_demon:'익스트림 데몬'};
+            const demontierHtml = d.demonTier
+                ? '<span style="color:#ffa726;">😈 ' + (tierLabels[d.demonTier] || d.demonTier) + '</span>'
+                : '<span style="color:#555">티어 미입력</span>';
             html += '<div class="admin-card" id="card-' + docId + '">'
                 + '<div class="admin-card-header">'
                 + '<div style="display:flex;align-items:center;gap:10px;">'
@@ -663,7 +667,7 @@ async function loadAdminPanel() {
                 + '<div class="info-row">👤 <strong>' + d.userName + '</strong> <span style="color:#555">(' + d.userEmail + ')</span></div>'
                 + '<div class="info-row">📅 제출일: <strong>' + date + '</strong></div>'
                 + '<div class="info-row">🎬 ' + videoHtml + '</div>'
-                + '<div class="info-row"> ' + demontier + '</div>'
+                + '<div class="info-row">🏷️ ' + demontierHtml + '</div>'
                 + '<div class="accept-form" id="accept-form-' + docId + '">'
                 + '<div style="font-size:0.8rem;color:var(--accent-pink);font-weight:700;margin-bottom:10px;">✅ 승인 정보 입력</div>'
                 + '<div class="row">'
@@ -698,30 +702,56 @@ async function loadAdminPanel() {
 
     // 승인 처리
     async function approveRecord(docId) {
-        const tier = document.getElementById(`tier-${docId}`).value;
-        const rank = document.getElementById(`rank-${docId}`).value;
-        const diff = document.getElementById(`diff-${docId}`).value;
+    const rank = document.getElementById('rank-' + docId).value;
+    const diff = document.getElementById('diff-' + docId).value;
 
-        if (!rank) { showToast('순위를 입력해주세요!'); return; }
-        if (diff === '') { showToast('난이도 수치를 입력해주세요!'); return; }
+    if (!rank) { showToast('순위를 입력해주세요!'); return; }
+    if (diff === '') { showToast('난이도 수치를 입력해주세요!'); return; }
 
-        try {
-            const { doc, updateDoc } = window.firestoreLib;
-            await updateDoc(doc(window.db, 'records', docId), {
-                status: 'accepted',
-                demonTier: tier,
-                rank: Number(rank),
-                difficultyScore: Number(diff),
-                reviewedAt: new Date()
-            });
-            showToast('✅ 기록이 승인되었습니다!');
-            // 카드 제거
-            const card = document.getElementById(`card-${docId}`);
-            if (card) card.remove();
-        } catch (e) {
-            console.error(e);
-            showToast('❌ 승인 실패. 콘솔 확인!');
+    try {
+        const { doc, updateDoc, getDoc, setDoc, increment, collection } = window.firestoreLib;
+
+        // 기록 가져와서 tier 확인
+        const recordRef = doc(window.db, 'records', docId);
+        const recordSnap = await getDoc(recordRef);
+        const recordData = recordSnap.data();
+        const tier = recordData.demonTier;
+
+        const pointsMap = {
+            easy_demon: 100, 'Easy demon': 100,
+            medium_demon: 500, 'Medium demon': 500,
+            hard_demon: 1000, 'Hard demon': 1000,
+            insane_demon: 10000, 'Insane demon': 10000,
+            extreme_demon: 100000, 'Extreme demon': 100000
+        };
+        const pts = pointsMap[tier] ?? 0;
+
+        // 기록 업데이트
+        await updateDoc(recordRef, {
+            status: 'accepted',
+            rank: Number(rank),
+            difficultyScore: Number(diff),
+            reviewedAt: new Date()
+        });
+
+        // 포인트 지급
+        if (pts > 0 && recordData.userEmail) {
+            const pointsRef = doc(window.db, 'points', recordData.userEmail);
+            const pointsSnap = await getDoc(pointsRef);
+            if (pointsSnap.exists()) {
+                await updateDoc(pointsRef, { total: increment(pts), userName: recordData.userName, userPhoto: recordData.userPhoto });
+            } else {
+                await setDoc(pointsRef, { total: pts, userEmail: recordData.userEmail, userName: recordData.userName, userPhoto: recordData.userPhoto });
+            }
         }
+
+        showToast('✅ 승인! ' + (pts > 0 ? pts.toLocaleString() + 'P 지급!' : ''));
+        const card = document.getElementById('card-' + docId);
+        if (card) card.remove();
+    } catch (e) {
+        console.error(e);
+        showToast('❌ 승인 실패. 콘솔 확인!');
+    }
     }
 
     // 거부 처리
@@ -741,14 +771,37 @@ async function loadAdminPanel() {
             showToast('❌ 거부 처리 실패.');
         }
     }
+    //포인트
+    async function loadMyPoints() {
+    if (!currentUser) { showToast('⚠️ 로그인 후 이용 가능합니다!'); return; }
+    const container = document.getElementById('list-container');
+    document.getElementById('list-title').innerText = '💰 내 포인트';
+    container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
+    try {
+        const { doc, getDoc } = window.firestoreLib;
+        const pointsRef = doc(window.db, 'points', currentUser.email);
+        const snap = await getDoc(pointsRef);
+        const total = snap.exists() ? snap.data().total : 0;
+
+        container.innerHTML = '<div style="padding:40px;text-align:center;">'
+            + '<div style="font-size:3rem;font-weight:900;color:var(--accent-pink);">' + total.toLocaleString() + 'P</div>'
+            + '<div style="color:#aaa;margin-top:10px;">누적 매점 포인트</div>'
+            + '<div style="margin-top:30px;background:#1a1a1a;border-radius:8px;padding:20px;text-align:left;font-size:0.85rem;color:#aaa;">'
+            + '😈 이지 데몬: 100P<br>😈 미디엄 데몬: 500P<br>😈 하드 데몬: 1,000P<br>😈 인세인 데몬: 10,000P<br>💀 익스트림 데몬: 100,000P'
+            + '</div></div>';
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<div style="padding:20px;color:red">불러오기 실패</div>';
+    }
+}
 </script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
     import {
-        getFirestore, collection, addDoc, getDocs,
-        query, orderBy, where, serverTimestamp,
-        doc, updateDoc
+    getFirestore, collection, addDoc, getDocs,
+    query, orderBy, where, serverTimestamp,
+    doc, updateDoc, deleteDoc, getDoc, setDoc, increment
     } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -765,10 +818,10 @@ async function loadAdminPanel() {
 
     window.db = db;
     window.firestoreLib = {
-        collection, addDoc, getDocs, query,
-        orderBy, where, serverTimestamp,
-        doc, updateDoc
-    };
+    collection, addDoc, getDocs, query,
+    orderBy, where, serverTimestamp,
+    doc, updateDoc, deleteDoc, getDoc, setDoc, increment
+};
 </script>
 </body>
 </html>
