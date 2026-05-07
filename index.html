@@ -255,6 +255,16 @@
                     <label>Video Link</label>
                     <input type="url" id="videoLink" placeholder="YouTube Link">
                 </div>
+                <div class="form-group">
+                    <label>type</label>
+                    <select id="demontier">
+                        <option value="Easy demon">Easy demon</option>
+                        <option value="Medium demon">Medium demon</option>
+                        <option value="Hard demon">Hard demon</option>
+                        <option value="Insane demon">Insane demon</option>
+                        <option value="Extreme demon">Extreme demon</option>
+                    </select>
+                </div>
                 <button class="submit-btn" onclick="submitRecord()">제출하기</button>
             </div>
         </aside>
@@ -479,6 +489,7 @@
         const name = document.getElementById('levelName').value;
         const percent = document.getElementById('percent').value;
         const video = document.getElementById('videoLink').value;
+        const demontier = document.getElementById('demontier').value;
         const status = "pending";
         if (!name) { showToast('레벨 이름을 입력해주세요!'); return; }
         try {
@@ -493,7 +504,7 @@
                 userPhoto: currentUser.picture,
                 createdAt: serverTimestamp(),
                 // 관리자가 나중에 채울 필드 (기본값)
-                demonTier: null,
+                demonTier: demontier,
                 rank: null,
                 difficultyScore: null
             });
@@ -622,7 +633,7 @@ async function loadAdminPanel() {
 
         const docs = [];
         snapshot.forEach(doc => docs.push(doc));
-        docs.sort((a, b) => (a.data().createdAt?.seconds ?? 0) - (b.data().createdAt?.seconds ?? 0));
+        docs.sort((a, b) => (b.data().createdAt?.seconds ?? 0) - (a.data().createdAt?.seconds ?? 0));
 
         if (docs.length === 0) {
             container.innerHTML = '<div style="padding:24px;color:#aaa;text-align:center;">✅ 검토할 Pending 기록이 없습니다.</div>';
@@ -635,6 +646,7 @@ async function loadAdminPanel() {
             const docId = doc.id;
             const date = d.createdAt?.toDate().toLocaleDateString('ko-KR') ?? '날짜 미상';
             const videoHtml = d.videoLink
+            const demontier = d.demontier
                 ? '<a href="' + d.videoLink + '" target="_blank" style="color:#5ec6ff;">영상 링크 보기</a>'
                 : '<span style="color:#555">영상 없음</span>';
 
@@ -651,16 +663,10 @@ async function loadAdminPanel() {
                 + '<div class="info-row">👤 <strong>' + d.userName + '</strong> <span style="color:#555">(' + d.userEmail + ')</span></div>'
                 + '<div class="info-row">📅 제출일: <strong>' + date + '</strong></div>'
                 + '<div class="info-row">🎬 ' + videoHtml + '</div>'
+                + '<div class="info-row"> ' + demontier + '</div>'
                 + '<div class="accept-form" id="accept-form-' + docId + '">'
                 + '<div style="font-size:0.8rem;color:var(--accent-pink);font-weight:700;margin-bottom:10px;">✅ 승인 정보 입력</div>'
                 + '<div class="row">'
-                + '<div><label>데몬 티어</label><select id="tier-' + docId + '">'
-                + '<option value="easy_demon">😈 이지 데몬</option>'
-                + '<option value="medium_demon">😈 미디엄 데몬</option>'
-                + '<option value="hard_demon">😈 하드 데몬</option>'
-                + '<option value="insane_demon">😈 인세인 데몬</option>'
-                + '<option value="extreme_demon">💀 익스트림 데몬</option>'
-                + '</select></div>'
                 + '<div><label>순위 (숫자만)</label><input type="number" id="rank-' + docId + '" placeholder="예: 42" min="1"></div>'
                 + '</div>'
                 + '<div><label>난이도 수치 (소수점 가능)</label><input type="number" id="diff-' + docId + '" placeholder="예: 8.7" step="0.1" min="0" max="10"></div>'
