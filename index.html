@@ -566,32 +566,28 @@ async function loadAllRecords() {
         const { collection, getDocs, query, orderBy } = window.firestoreLib;
         const q = query(collection(window.db, 'records'), orderBy('createdAt','desc'));
         const snapshot = await getDocs(q);
-        const snapshot = await getDocs(q);
 
-// 정렬
-const tierOrder = {extreme_demon:0, insane_demon:1, hard_demon:2, medium_demon:3, easy_demon:4};
-const docs = [];
-snapshot.forEach(doc => {
-    if (doc.data().status !== 'rejected') docs.push(doc);
-});
-docs.sort((a, b) => {
-    const da = a.data(), db = b.data();
-    const tierDiff = (tierOrder[da.demonTier] ?? 9) - (tierOrder[db.demonTier] ?? 9);
-    if (tierDiff !== 0) return tierDiff;
-    return (db.difficultyScore ?? 0) - (da.difficultyScore ?? 0); // 난이도 수치 높은 순
-});
+        const tierOrder = {extreme_demon:0, insane_demon:1, hard_demon:2, medium_demon:3, easy_demon:4};
+        const docs = [];
+        snapshot.forEach(doc => {
+            if (doc.data().status !== 'rejected') docs.push(doc);
+        });
+        docs.sort((a, b) => {
+            const da = a.data(), db = b.data();
+            const tierDiff = (tierOrder[da.demonTier] ?? 9) - (tierOrder[db.demonTier] ?? 9);
+            if (tierDiff !== 0) return tierDiff;
+            return (db.difficultyScore ?? 0) - (da.difficultyScore ?? 0);
+        });
 
-if (docs.length === 0) { container.innerHTML = '...'; return; }
-        if (snapshot.empty) { container.innerHTML = '<div style="padding:20px;color:#aaa">기록 없음</div>'; return; }
+        if (docs.length === 0) { container.innerHTML = '<div style="padding:20px;color:#aaa">기록 없음</div>'; return; }
+
         const sStyle = {
             accepted:{label:'✅ Accepted',color:'#4caf50'},
-            rejected:{label:'❌ Rejected',color:'#f44336'},
             pending: {label:'⏳ Pending', color:'#ffa726'}
         };
         let html = '';
-        snapshot.forEach(doc => {
+        docs.forEach(doc => {
             const d = doc.data();
-            if (d.status === 'rejected') return;
             const s = sStyle[d.status] || sStyle['pending'];
             html += '<div class="demon-item" style="flex-direction:column;align-items:flex-start;gap:4px;">'
                 + '<div style="display:flex;justify-content:space-between;width:100%;align-items:center;">'
