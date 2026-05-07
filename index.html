@@ -778,17 +778,56 @@ async function loadAdminPanel() {
     document.getElementById('list-title').innerText = '💰 내 포인트';
     container.innerHTML = '<div style="padding:20px;color:#aaa">불러오는 중...</div>';
     try {
-        const { doc, getDoc } = window.firestoreLib;
+        const { doc, getDoc, collection, getDocs, query, where } = window.firestoreLib;
+
+        // 포인트 가져오기
         const pointsRef = doc(window.db, 'points', currentUser.email);
         const snap = await getDoc(pointsRef);
         const total = snap.exists() ? snap.data().total : 0;
 
-        container.innerHTML = '<div style="padding:40px;text-align:center;">'
+        // 내 기록 가져오기
+        const q = query(collection(window.db, 'records'), where('userEmail','==', currentUser.email));
+        const recordsSnap = await getDocs(q);
+
+        const counts = {easy_demon:0, medium_demon:0, hard_demon:0, insane_demon:0, extreme_demon:0};
+        recordsSnap.forEach(d => {
+            const data = d.data();
+            if (data.status === 'accepted' && counts[data.demonTier] !== undefined) {
+                counts[data.demonTier]++;
+            }
+        });
+
+        const tierRows = [
+            {key:'easy_demon',    label:'😈 이지 데몬',    pts:'100P'},
+            {key:'medium_demon',  label:'😈 미디엄 데몬',  pts:'500P'},
+            {key:'hard_demon',    label:'😈 하드 데몬',    pts:'1,000P'},
+            {key:'insane_demon',  label:'😈 인세인 데몬',  pts:'10,000P'},
+            {key:'extreme_demon', label:'💀 익스트림 데몬',pts:'100,000P'},
+        ];
+
+        let tableRows = '';
+        tierRows.forEach(t => {
+            tableRows += '<tr>'
+                + '<td style="padding:8px 12px;color:#aaa;">' + t.label + '</td>'
+                + '<td style="padding:8px 12px;color:#ffd700;text-align:center;">' + t.pts + '</td>'
+                + '<td style="padding:8px 12px;color:var(--accent-pink);text-align:center;font-weight:700;">' + counts[t.key] + '개</td>'
+                + '</tr>';
+        });
+
+        container.innerHTML = '<div style="padding:30px;">'
+            + '<div style="text-align:center;margin-bottom:30px;">'
             + '<div style="font-size:3rem;font-weight:900;color:var(--accent-pink);">' + total.toLocaleString() + 'P</div>'
-            + '<div style="color:#aaa;margin-top:10px;">누적 매점 포인트</div>'
-            + '<div style="margin-top:30px;background:#1a1a1a;border-radius:8px;padding:20px;text-align:left;font-size:0.85rem;color:#aaa;">'
-            + '😈 이지 데몬: 100P<br>😈 미디엄 데몬: 500P<br>😈 하드 데몬: 1,000P<br>😈 인세인 데몬: 10,000P<br>💀 익스트림 데몬: 100,000P'
-            + '</div></div>';
+            + '<div style="color:#aaa;margin-top:8px;">누적 매점 포인트</div>'
+            + '</div>'
+            + '<table style="width:100%;border-collapse:collapse;background:#1a1a1a;border-radius:8px;overflow:hidden;">'
+            + '<thead><tr style="border-bottom:1px solid #2a2a2a;">'
+            + '<th style="padding:10px 12px;color:var(--accent-pink);text-align:left;">난이도</th>'
+            + '<th style="padding:10px 12px;color:var(--accent-pink);">포인트</th>'
+            + '<th style="padding:10px 12px;color:var(--accent-pink);">클리어</th>'
+            + '</tr></thead>'
+            + '<tbody>' + tableRows + '</tbody>'
+            + '</table>'
+            + '</div>';
     } catch (e) {
         console.error(e);
         container.innerHTML = '<div style="padding:20px;color:red">불러오기 실패</div>';
