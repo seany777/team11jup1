@@ -422,67 +422,185 @@
             </div>`;
     }
 
-    function loadGDDPList() {
-        document.getElementById('list-title').innerText = "GDDP (Offline List)";
-        let html = '';
-        const tiers = ['beginner','bronze','silver','gold'];
-        tiers.forEach(tier => {
-            const colors = {beginner:'#5ec6ff',bronze:'#cd7f32',silver:'#c0c0c0',gold:'#ffd700'};
-            html += `<div class="tier-divider" style="border-left:5px solid ${colors[tier]};color:${colors[tier]};font-size:0.8rem;">${tier.toUpperCase()} TIER</div>`;
-            GDDP_OFFLINE[tier].forEach(level => {
-                html += `<div class="demon-item" onclick="window.open('https://youtube.com/results?search_query=GD+${level.name}','_blank')">
-                    <span class="rank" style="color:#555">ID: ${level.id}</span>
-                    <div class="level-info"><span class="name">${level.name}</span><span class="author">by ${level.author}</span></div>
-                </div>`;
+    async function loadGDDPList() {
+
+        const container = document.getElementById('list-container');
+
+        document.getElementById('list-title').innerText = "GDDP LIVE";
+
+        container.innerHTML = `
+            <div style="padding:20px; color:#aaa;">
+                GDDP 데이터를 불러오는 중...
+            </div>
+        `;
+
+        try {
+
+            // 🔥 Vercel API 호출
+            const res = await fetch('http://localhost:3001/api/gddp');
+
+            if (!res.ok) {
+                throw new Error('API ERROR');
+            }
+
+            const data = await res.json();
+
+            console.log("GDDP DATA:", data);
+
+            let html = '';
+
+            // 티어 색상
+            const tierColors = {
+                beginner: '#5ec6ff',
+                bronze: '#cd7f32',
+                silver: '#c0c0c0',
+                gold: '#ffd700',
+                platinum: '#66ffcc'
+            };
+
+            // 표시 순서
+            const tierOrder = [
+                'beginner',
+                'bronze',
+                'silver',
+                'gold'
+            ];
+
+            tierOrder.forEach(tier => {
+
+                // 데이터 없으면 건너뜀
+                if (!data[tier] || data[tier].length === 0) return;
+
+                const color = tierColors[tier] || '#ffffff';
+
+                // 티어 헤더
+                html += `
+                    <div class="tier-divider"
+                        style="
+                            border-left: 5px solid ${color};
+                            color: ${color};
+                            font-size: 0.8rem;
+                        ">
+                        ${tier.toUpperCase()} TIER
+                    </div>
+                `;
+
+                // 레벨들
+                data[tier].forEach(level => {
+
+                    html += `
+                        <div class="demon-item"
+                            onclick="window.open(
+                                'https://gdbrowser.com/search/${encodeURIComponent(level.name)}',
+                                '_blank'
+                            )">
+
+                            <span class="rank"
+                                style="
+                                    color:${color};
+                                    min-width:80px;
+                                    margin-right:12px;
+                                ">
+                                GDDP
+                            </span>
+
+                            <div class="level-info">
+                                <span class="name">
+                                    ${level.name}
+                                </span>
+                            </div>
+
+                        </div>
+                    `;
+                });
             });
-        });
-        document.getElementById('list-container').innerHTML = html;
+
+            container.innerHTML = html;
+
+        } catch (err) {
+
+            console.error(err);
+
+            container.innerHTML = `
+                <div style="padding:20px; color:red;">
+                    ❌ GDDP 데이터를 불러오지 못했습니다.
+                </div>
+            `;
+        }
     }
 
     async function loadExtremeList() {
-    const container = document.getElementById('list-container');
-    document.getElementById('list-title').innerText = "AREDL (LIVE)";
-    container.innerHTML = `<div class="demon-item">불러오는 중...</div>`;
 
-    try {
-        const res = await fetch("/api/aredl.js");
-        const data = await res.json();
+        const container = document.getElementById('list-container');
 
-        const levels = data.data ?? data;
-        if (!levels || levels.length === 0) {
-            container.innerHTML = `<div class="demon-item">데이터 없음</div>`;
-            return;
-        }
+        document.getElementById('list-title').innerText = "AREDL (LIVE)";
 
-        let html = '';
-        levels.forEach(level => {
-            html += `
-                <div class="demon-item"
-                    onclick="window.open('https://gdbrowser.com/search/${encodeURIComponent(level.name)}', '_blank')">
-                    <span class="rank" style="color:var(--accent-pink)">#${level.position}</span>
-                    <div class="level-info">
-                        <span class="name">${level.name}</span>
-                        <span class="author">by ${level.publisher?.name ?? '?'}</span>
+        container.innerHTML =
+            `<div class="demon-item">불러오는 중...</div>`;
+
+        try {
+
+            // 공식 AREDL API
+            const res = await fetch('http://localhost:3001/api/aredl');
+
+            if (!res.ok) {
+                throw new Error('API ERROR');
+            }
+
+            const data = await res.json();
+
+            console.log("AREDL DATA:", data);
+
+            if (!data || data.length === 0) {
+
+                container.innerHTML =
+                    `<div class="demon-item">데이터 없음</div>`;
+
+                return;
+            }
+
+            let html = '';
+
+            data.forEach(level => {
+
+                html += `
+                    <div class="demon-item"
+                        onclick="window.open(
+                            'https://gdbrowser.com/${level.level_id}',
+                            '_blank'
+                        )">
+
+                        <span class="rank"
+                            style="
+                                color: var(--accent-pink);
+                                min-width: 80px;
+                                margin-right: 12px;
+                            ">
+                            #${level.position}
+                        </span>
+
+                        <div class="level-info">
+                            <span class="name">
+                                ${level.name}
+                            </span>
+                            ${level.publisher ? `<span class="author" style="font-size:0.8em;opacity:0.7;">by ${level.publisher}</span>` : ''}
+                        </div>
+
                     </div>
-                </div>`;
-        });
-        container.innerHTML = html;
+                `;
+            });
 
-    } catch (e) {
-        console.error(e);
-        // API 실패 시 오프라인 데이터로 폴백
-        let html = '';
+            container.innerHTML = html;
 
-        //AREDL_OFFLINE.forEach(level => {
-        //    html += `<div class="demon-item">
-        //        <span class="rank" style="color:var(--accent-pink)">${level.rank}</span>
-        //        <div class="level-info"><span class="name">${level.name}</span><span class="author">by ${level.publisher}</span></div>
-        //    </div>`;
-        //});
-        container.innerHTML = html;
-        showToast('⚠️ 인터넷에 연결해주세요');
+        } catch (e) {
+
+            console.error(e);
+
+            container.innerHTML =
+                `<div class="demon-item">불러오기 실패</div>`;
+        }
     }
-}
+
 
     // ── 제출 ──
     async function submitRecord() {
